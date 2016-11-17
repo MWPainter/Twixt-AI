@@ -5,7 +5,6 @@ def ccw(pin1, pin2, pin3):
 
 # the following function returns true if two bridges intersect
 def intersect(bridge1, bridge2):
-    print bridge1, bridge2
     pin11 = bridge1[0]
     pin12 = bridge1[1]
     pin21 = bridge2[0]
@@ -119,8 +118,10 @@ class twixtBoard:
         
     # update board for every move
     def updateBoard(self, action):
-        if action not in self.getLegalAction(self.agent):
-            print "Action not allowed!"
+        actions = self.getLegalAction(self.agent)
+        print actions, "here2"
+        if action not in actions:
+            print "Action not allowed!", action
             return
         if action in self.boardActions:
             self.boardActions.remove(action)
@@ -146,7 +147,7 @@ class twixtBoard:
         self.agent = 1 - self.agent
 
     def winner(self):
-        result = False
+        result = False  
         assignments = [set(), set(), set(), set()]
         for i in range(1, self.N - 1):
             pins = [(0, i), (i, 0), (self.N - 1, i), (i, self.N - 1)]
@@ -168,6 +169,21 @@ class twixtBoard:
         for k,v in self.assignment[1].iteritems():
             scores[1].add(v);
         return len(scores[1])-len(scores[0])
+
+    # deep copy - edit
+    def generateSuccessor(self, agent, action):
+        newGame = twixtBoard(self.N)
+        newGame.pins = self.pins
+        newGame.bridges = self.bridges
+        newGame.agent = agent
+        newGame.boardActions = self.boardActions
+        newGame.agentActions = self.agentActions
+        newGame.label = self.label
+        newGame.assignment = self.assignment
+        newGame.counter = self.counter
+        newGame.updateBoard(action)
+        return newGame
+        
 
         
     
