@@ -49,7 +49,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
 			return optimalScoreActionPair
 
-		## function implementaiton starts here
-		return agentMove(gameState, agentIndex = 0, self.depth)[1]
+	## function implementaiton starts here
+	return agentMove(gameState, agentIndex = 0, self.depth)[1]
 
     # END_YOUR_CODE
