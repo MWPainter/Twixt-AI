@@ -30,9 +30,9 @@ class MinimaxAgent(MultiAgentSearchAgent):
 				if score < optimalScoreActionPair[0]:
 					optimalScoreActionPair = (score, action)
 
-	      	return optimalScoreActionPair
+		return optimalScoreActionPair
 
-	    def agentMove(gameState, agentIndex, currentDepth):
+	def agentMove(gameState, agentIndex, currentDepth):
 
 			if (currentDepth == 0):
 				return (self.evaluationFunction(gameState), None)
@@ -45,11 +45,11 @@ class MinimaxAgent(MultiAgentSearchAgent):
 			for action in legalMoves:
 				score, ghostAction = oppMove(gameState.generateSuccessor(agentIndex, action), 1-agentIndex, currentDepth)        
 				if score > optimalScoreActionPair[0]:
-			 		optimalScoreActionPair = (score, action)
+					optimalScoreActionPair = (score, action)
 
 			return optimalScoreActionPair
 
-	    ## function implementaiton starts here
-	    return agentMove(gameState, agentIndex = 0, self.depth)[1]
+		## function implementaiton starts here
+		return agentMove(gameState, agentIndex = 0, self.depth)[1]
 
     # END_YOUR_CODE
