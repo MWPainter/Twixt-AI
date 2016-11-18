@@ -2,9 +2,9 @@ from twixt import twixtBoard
 import agent
 from util import printc, bcolors
 
-n = 10
+n = 7
 iter = 1
-depth = 2
+depth = 1
 agent = [agent.MinimaxAgent(depth), agent.MinimaxAgent(depth)]
 
 def drawBoard(n, labels, assignments):

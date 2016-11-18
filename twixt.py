@@ -168,6 +168,7 @@ class twixtBoard:
             for x in bridges:
                 self.assignment[self.agent][self.label[x]] = l
         self.pins[action] = self.agent
+        self.updateRunningScore()
         self.agent = 1 - self.agent
 
     def winner(self):
@@ -196,6 +197,7 @@ class twixtBoard:
         newGame.assignment = copyDictDict(self.assignment)
         newGame.counter = self.counter
         newGame.runningScore = self.runningScore
+        newGame.lastAddedPin = self.lastAddedPin[:]
         newGame.updateBoard(action)
         return newGame
 
@@ -220,18 +222,17 @@ class twixtBoard:
     
     # special pins making good strategic options
     def specialPins(self, agent, pin):
-        special = defaultdict(tuple)
+        special = []
         # 2-step away pins are the first 6, 3-step away pins are the last 2
-        change = [(0, 4), (-4, 0), (1, 3), (1, -3), (3, 1), (3, -1), (-4, -4), (-4, 4)]
-        # 3-step away pins
+        change = [(0, 4), (-4, 0), (1, 3), (1, -3), (3, 1), (3, -1), (-4, -4), (-4, 4), (3, 3), (3, -3)]
         pins = []
         for c in change:
-            pins.append(pin[0] + c[0], pin[1] + c[1])
-            pins.append(pin[0] - c[0], pin[1] - c[1])
+            pins.append((pin[0] + c[0], pin[1] + c[1]))
+            pins.append((pin[0] - c[0], pin[1] - c[1]))
         for p in pins:
-            if (p in self.pins) and (p not in self.bridges[pin]):
+            if (p in self.pins) and ((pin not in self.bridges) or (p not in self.bridges[pin])):
                 if self.pins[p] == agent:
-                    special[agent] = p
+                    special.append(p)
         return special
 
     # opponent opportunities reduced as a result of placing the new pin
@@ -240,36 +241,38 @@ class twixtBoard:
         for k, v in self.bridges[pin].iteritems():
             newBridges.append(k)
         return 0
-    
-    # returns a better and more specialized score than getScore
-    def getBetterScore(self):
-        agent = 1 - self.agent
-        if self.winner() == agent:
-            return 100000
-        elif self.winner() == 1 - agent:
-            return -100000
-        else:
-            return 0
-        if len(self.pins) == 1:
-            score0 = self.lastAddedPin[0][0] + self.lastAddedPin[0][1]
-            self.runningScore = score0
-            return score0
-        if len(self.pins) == 2:
-            score1 = self.lastAddedPin[1][0] + self.lastAddedPin[1][1] - 2.0 * len(self.getNeighbors(lastPin))
-            self.runningScore -= score1 
-            return self.runningScore
-        lastPin = self.lastAddedPin[agent]
+
+    def updateRunningScore(self):
+        lastPin = self.lastAddedPin[self.agent]
         score = 0
+        # if len(self.pins) == 1:
+        #     score0 = 2 * self.N - 2 - abs(self.lastAddedPin[0][0] + self.lastAddedPin[0][1] - self.N)
+        #     self.runningScore = score0
+        #     return score0
+        # if len(self.pins) == 2:
+        #     score1 = 2 * self.N - 2 - abs(self.lastAddedPin[1][0] + self.lastAddedPin[1][1] - self.N) - 2.0 * len(self.getNeighbors(lastPin))
+        #     self.runningScore -= score1 
+        #     return self.runningScore
+
         # distance one is bad
-        score -= 2.0 * len(self.getNeighbors(lastPin)) * (lastPin not in self.bridges)
+        score -= 2.0 * len(self.getNeighbors(lastPin))
         # special pins are good
-        score += 3.0 * len(self.specialPins(agent, lastPin))
+        #score += 1.0 * len(self.specialPins(self.agent, lastPin))
         # creating bridges is good
         if lastPin in self.bridges:
             score += 2.0 * len(self.bridges[lastPin])
         # reducing opponent possibilities is great
-        score += self.oppLoss(agent, lastPin)
-        self.runningScore += (1 - 2 * agent) * score
+        #score += self.oppLoss(self.agent, lastPin)
+        self.runningScore += -(1 - 2 * self.agent) * score
+    
+    # returns a better and more specialized score than getScore
+    def getBetterScore(self):
+
+        if self.winner() == self.agent:
+            return 100000
+        elif self.winner() == 1 - self.agent:
+            return -100000
+        
         return self.runningScore
         
         
