@@ -11,12 +11,10 @@ class MinimaxAgent(object):
     def getAction(self, gameState):
 	def oppMove(gameState, currentDepth):
 	    legalMoves = gameState.getLegalAction(gameState.agent)
-	    print gameState.agent, legalMoves
 	    if legalMoves == set([]):
 		return (self.evaluationFunction(gameState), None)
 	    optimalScoreActionPair = (float('inf'), None)
 	    for action in legalMoves:
-                print action
 		score, optimalAction = agentMove(gameState.generateSuccessor(gameState.agent, action), currentDepth-1)
 		if score < optimalScoreActionPair[0]:
 		    optimalScoreActionPair = (score, action)
@@ -26,12 +24,10 @@ class MinimaxAgent(object):
 	    if (currentDepth == 0):
 		return (self.evaluationFunction(gameState), None)
             legalMoves = gameState.getLegalAction(gameState.agent)
-            print gameState.agent, legalMoves
 	    if legalMoves == set([]):
 		return (self.evaluationFunction(gameState), None)
 	    optimalScoreActionPair = (-float('inf'), None)
 	    for action in legalMoves:
-                print action
 		score, optimalAction = oppMove(gameState.generateSuccessor(gameState.agent, action), currentDepth)
 		if score > optimalScoreActionPair[0]:
 		    optimalScoreActionPair = (score, action)

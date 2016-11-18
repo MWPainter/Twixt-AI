@@ -27,7 +27,8 @@ def copyDictInt(d):
 def copyDictSet(d):
     e = defaultdict(set)
     for x in d:
-        e[x] = d[x]
+        for y in d[x]:
+            e[x].add(y)
     return e
 
 class twixtBoard:
@@ -182,18 +183,17 @@ class twixtBoard:
 
     def getScore(self):
         scores = [set(), set()]
-        for k,v in self.assignment[0].iteritems():
-            scores[0].add(v);
-        for k,v in self.assignment[1].iteritems():
-            scores[1].add(v);
-        return len(scores[1])-len(scores[0])
+        for k,v in self.assignment[self.agent].iteritems():
+            scores[self.agent].add(v);
+        for k,v in self.assignment[1-self.agent].iteritems():
+            scores[1-self.agent].add(v);
+        return len(scores[1-self.agent])-len(scores[self.agent])
 
     # deep copy - edit
     def generateSuccessor(self, agent, action):
         newGame = twixtBoard(self.N)
         newGame.pins = copyDictInt(self.pins)
         newGame.bridges = copyDictDict(self.bridges)
-        self.bridges[(-1,-1)][(-1,-1)] = -1
         newGame.agent = agent
         newGame.boardActions = set(self.boardActions)
         newGame.agentActions = copyDictSet(self.agentActions)
