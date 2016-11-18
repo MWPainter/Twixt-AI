@@ -245,14 +245,14 @@ class twixtBoard:
     def updateRunningScore(self):
         lastPin = self.lastAddedPin[self.agent]
         score = 0
-        # if len(self.pins) == 1:
-        #     score0 = 2 * self.N - 2 - abs(self.lastAddedPin[0][0] + self.lastAddedPin[0][1] - self.N)
-        #     self.runningScore = score0
-        #     return score0
-        # if len(self.pins) == 2:
-        #     score1 = 2 * self.N - 2 - abs(self.lastAddedPin[1][0] + self.lastAddedPin[1][1] - self.N) - 2.0 * len(self.getNeighbors(lastPin))
-        #     self.runningScore -= score1 
-        #     return self.runningScore
+         if len(self.pins) == 1:
+             score0 = 2 * self.N - 2 - abs(self.lastAddedPin[0][0] + self.lastAddedPin[0][1] - self.N)
+            self.runningScore = score0
+             return score0
+         if len(self.pins) == 2:
+             score1 = 2 * self.N - 2 - abs(self.lastAddedPin[1][0] + self.lastAddedPin[1][1] - self.N) - 2.0 * len(self.getNeighbors(lastPin))
+             self.runningScore -= score1 
+             return self.runningScore
 
         # distance one is bad
         score -= 2.0 * len(self.getNeighbors(lastPin))
@@ -263,16 +263,14 @@ class twixtBoard:
             score += 2.0 * len(self.bridges[lastPin])
         # reducing opponent possibilities is great
         #score += self.oppLoss(self.agent, lastPin)
-        self.runningScore += -(1 - 2 * self.agent) * score
+        self.runningScore += (1 - 2 * self.agent) * score
     
     # returns a better and more specialized score than getScore
     def getBetterScore(self):
-
         if self.winner() == self.agent:
             return 100000
         elif self.winner() == 1 - self.agent:
-            return -100000
-        
+            return -100000        
         return self.runningScore
         
         
