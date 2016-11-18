@@ -11,6 +11,25 @@ def intersect(bridge1, bridge2):
     pin22 = bridge2[1]
     return ccw(pin11, pin21, pin22) != ccw(pin12, pin21, pin22) and ccw(pin11, pin12, pin21) != ccw(pin11, pin12, pin22)
 
+def copyDictDict(d):
+    e = defaultdict(dict)
+    for x in d:
+        for y in d[x]:
+            e[x][y] = d[x][y]
+    return e
+
+def copyDictInt(d):
+    e = defaultdict(int)
+    for x in d:
+        e[x] = d[x]
+    return e
+
+def copyDictSet(d):
+    e = defaultdict(set)
+    for x in d:
+        e[x] = d[x]
+    return e
+
 class twixtBoard:
     def __init__(self, N):
         # size of the table, including the exclusive rows and columns
@@ -119,7 +138,6 @@ class twixtBoard:
     # update board for every move
     def updateBoard(self, action):
         actions = self.getLegalAction(self.agent)
-        print actions, "here2"
         if action not in actions:
             print "Action not allowed!", action
             return
@@ -131,8 +149,8 @@ class twixtBoard:
         bridges = []
         for i in range(8):
             if self.bridgePossible(neighbors[i], action, self.agent):
-                self.bridges[action][neighbors[i]] = self.agent
                 self.bridges[neighbors[i]][action] = self.agent
+                self.bridges[action][neighbors[i]] = self.agent         
                 bridges.append(neighbors[i])
         if len(bridges) == 0:
             self.label[action] = self.counter
@@ -173,13 +191,14 @@ class twixtBoard:
     # deep copy - edit
     def generateSuccessor(self, agent, action):
         newGame = twixtBoard(self.N)
-        newGame.pins = self.pins
-        newGame.bridges = self.bridges
+        newGame.pins = copyDictInt(self.pins)
+        newGame.bridges = copyDictDict(self.bridges)
+        self.bridges[(-1,-1)][(-1,-1)] = -1
         newGame.agent = agent
-        newGame.boardActions = self.boardActions
-        newGame.agentActions = self.agentActions
-        newGame.label = self.label
-        newGame.assignment = self.assignment
+        newGame.boardActions = set(self.boardActions)
+        newGame.agentActions = copyDictSet(self.agentActions)
+        newGame.label = copyDictInt(self.label)
+        newGame.assignment = copyDictDict(self.assignment)
         newGame.counter = self.counter
         newGame.updateBoard(action)
         return newGame
