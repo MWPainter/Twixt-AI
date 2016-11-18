@@ -38,6 +38,8 @@ class twixtBoard:
         # the following two variables together represent the current state of the game
         # positions of the pins on the board
         self.pins = defaultdict(int)
+        # last added pin
+        self.lastAddedPin = [(0,0), (0,0)]
         # bridges placed on the table. remember to have both pin1: pin2 and pin2: pin1
         self.bridges = defaultdict(dict)
         # agent is either 0 or 1. agent 0 owns the top and bottom rows (0 and N-1)
@@ -52,6 +54,8 @@ class twixtBoard:
         self.assignment = defaultdict(dict)
         # label counter
         self.counter = 0
+        # running score
+        self.runningScore = 0
         self.initializeActions()
 
     # this function initializes the actions lists
@@ -123,7 +127,7 @@ class twixtBoard:
         #print "all is cool"
         return True
 
-    # returns the possible neighbors of a newly added pin
+    # returns the possible L-neighbors of a newly added pin
     def possibleNeighbors(self, pin):
         neighbors = []
         neighbors.append((pin[0] - 1, pin[1] - 2))
@@ -148,6 +152,7 @@ class twixtBoard:
             self.agentActions[self.agent].remove(action)
         neighbors  = self.possibleNeighbors(action)
         bridges = []
+        self.lastAddedPin[self.agent] = action
         for i in range(8):
             if self.bridgePossible(neighbors[i], action, self.agent):
                 self.bridges[neighbors[i]][action] = self.agent
@@ -166,7 +171,6 @@ class twixtBoard:
         self.agent = 1 - self.agent
 
     def winner(self):
-        result = False  
         assignments = [set(), set(), set(), set()]
         for i in range(1, self.N - 1):
             pins = [(0, i), (i, 0), (self.N - 1, i), (i, self.N - 1)]
@@ -181,15 +185,6 @@ class twixtBoard:
             return 2
         return -1
 
-    def getScore(self):
-        scores = [set(), set()]
-        for k,v in self.assignment[self.agent].iteritems():
-            scores[self.agent].add(v);
-        for k,v in self.assignment[1-self.agent].iteritems():
-            scores[1-self.agent].add(v);
-        return len(scores[1-self.agent])-len(scores[self.agent])
-
-    # deep copy - edit
     def generateSuccessor(self, agent, action):
         newGame = twixtBoard(self.N)
         newGame.pins = copyDictInt(self.pins)
@@ -200,8 +195,87 @@ class twixtBoard:
         newGame.label = copyDictInt(self.label)
         newGame.assignment = copyDictDict(self.assignment)
         newGame.counter = self.counter
+        newGame.runningScore = self.runningScore
         newGame.updateBoard(action)
         return newGame
+
+    def getScore(self):
+        scores = [set(), set()]
+        for k,v in self.assignment[self.agent].iteritems():
+            scores[self.agent].add(v);
+        for k,v in self.assignment[1-self.agent].iteritems():
+            scores[1-self.agent].add(v);
+        return len(scores[1-self.agent])-len(scores[self.agent])
+
+    # returns the set of adjacent pins (8 if possible)
+    def getNeighbors(self, pin):
+        neighbors = []
+        change = [-1, 0, 1]
+        for c1 in change:
+            for c2 in change:
+                pinTemp = (pin[0] + c1, pin[1] + c2)
+                if pinTemp in self.pins and (c1 != 0 or c2 != 0):
+                    neighbors.append(pinTemp)
+        return neighbors
+    
+    # special pins making good strategic options
+    def specialPins(self, agent, pin):
+        special = defaultdict(tuple)
+        # 2-step away pins are the first 6, 3-step away pins are the last 2
+        change = [(0, 4), (-4, 0), (1, 3), (1, -3), (3, 1), (3, -1), (-4, -4), (-4, 4)]
+        # 3-step away pins
+        pins = []
+        for c in change:
+            pins.append(pin[0] + c[0], pin[1] + c[1])
+            pins.append(pin[0] - c[0], pin[1] - c[1])
+        for p in pins:
+            if (p in self.pins) and (p not in self.bridges[pin]):
+                if self.pins[p] == agent:
+                    special[agent] = p
+        return special
+
+    # opponent opportunities reduced as a result of placing the new pin
+    def oppLoss(self, agent, pin):
+        newBridges = []
+        for k, v in self.bridges[pin].iteritems():
+            newBridges.append(k)
+        return 0
+    
+    # returns a better and more specialized score than getScore
+    def getBetterScore(self):
+        agent = 1 - self.agent
+        if self.winner() == agent:
+            return 100000
+        elif self.winner() == 1 - agent:
+            return -100000
+        else:
+            return 0
+        if len(self.pins) == 1:
+            score0 = self.lastAddedPin[0][0] + self.lastAddedPin[0][1]
+            self.runningScore = score0
+            return score0
+        if len(self.pins) == 2:
+            score1 = self.lastAddedPin[1][0] + self.lastAddedPin[1][1] - 2.0 * len(self.getNeighbors(lastPin))
+            self.runningScore -= score1 
+            return self.runningScore
+        lastPin = self.lastAddedPin[agent]
+        score = 0
+        # distance one is bad
+        score -= 2.0 * len(self.getNeighbors(lastPin)) * (lastPin not in self.bridges)
+        # special pins are good
+        score += 3.0 * len(self.specialPins(agent, lastPin))
+        # creating bridges is good
+        if lastPin in self.bridges:
+            score += 2.0 * len(self.bridges[lastPin])
+        # reducing opponent possibilities is great
+        score += self.oppLoss(agent, lastPin)
+        self.runningScore += (1 - 2 * agent) * score
+        return self.runningScore
+        
+        
+        
+            
+            
         
 
         
