@@ -6,7 +6,7 @@ class MinimaxAgent(object):
 		self.depth = int(depth)
 
 	def evaluationFunction(self, currentGameState):
-		return currentGameState.getScore()
+		return currentGameState.getBetterScore()
 
 	def getAction(self, gameState):
 
