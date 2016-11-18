@@ -245,32 +245,37 @@ class twixtBoard:
     def updateRunningScore(self):
         lastPin = self.lastAddedPin[self.agent]
         score = 0
-         if len(self.pins) == 1:
-             score0 = 2 * self.N - 2 - abs(self.lastAddedPin[0][0] + self.lastAddedPin[0][1] - self.N)
-            self.runningScore = score0
-             return score0
-         if len(self.pins) == 2:
-             score1 = 2 * self.N - 2 - abs(self.lastAddedPin[1][0] + self.lastAddedPin[1][1] - self.N) - 2.0 * len(self.getNeighbors(lastPin))
-             self.runningScore -= score1 
-             return self.runningScore
-
-        # distance one is bad
-        score -= 2.0 * len(self.getNeighbors(lastPin))
-        # special pins are good
-        #score += 1.0 * len(self.specialPins(self.agent, lastPin))
-        # creating bridges is good
-        if lastPin in self.bridges:
-            score += 2.0 * len(self.bridges[lastPin])
-        # reducing opponent possibilities is great
-        #score += self.oppLoss(self.agent, lastPin)
-        self.runningScore += (1 - 2 * self.agent) * score
-    
-    # returns a better and more specialized score than getScore
-    def getBetterScore(self):
+        
+        if self.winner() >= 0:
+            return
+        
         if self.winner() == self.agent:
-            return 100000
+            self.runningScore = float('inf')
+            return
         elif self.winner() == 1 - self.agent:
-            return -100000        
+            self.runningScore = -float('inf')
+            return
+
+        if len(self.pins) == 1:
+            score0 = 2 * self.N - 2 - (abs(self.lastAddedPin[0][0] - self.N/2.0) + abs(self.lastAddedPin[0][1] - self.N/2.0))
+            self.runningScore += score0
+        if len(self.pins) == 2:
+            score1 = 2 * self.N - 2 - (abs(self.lastAddedPin[0][0] - self.N/2.0) + abs(self.lastAddedPin[0][1] - self.N/2.0)) - 2.0 * len(self.getNeighbors(lastPin))
+            self.runningScore -= score1
+        else:
+            # distance one is bad
+            score -= 1.0 * len(self.getNeighbors(lastPin))
+            # special pins are good
+            score += 2.0 * len(self.specialPins(self.agent, lastPin))
+            # creating bridges is good
+            if lastPin in self.bridges:
+                score += 2.0 * len(self.bridges[lastPin])
+            # reducing opponent possibilities is great
+            #score += self.oppLoss(self.agent, lastPin)
+            self.runningScore += (1 - 2 * self.agent) * score
+
+    # returns a better and more specialized score than getScore
+    def getBetterScore(self):        
         return self.runningScore
         
         

@@ -2,24 +2,25 @@ from twixt import twixtBoard
 import agent
 from util import printc, bcolors
 
-n = 7
+n = 11
 iter = 1
 depth = 1
-agent = [agent.MinimaxAgent(depth), agent.MinimaxAgent(depth)]
+width = 4
+agent = [agent.ExpectimaxAgent(depth), agent.MaximinAgent(depth)]
 
 def drawBoard(n, labels, assignments):
 	for i in range(n):
 		for j in range(n):
 			if (i == 0 or i == n-1) and (j == 0 or j == n-1):
-				print "%-*s" % (8, ""),
+				print "%-*s" % (width, ""),
 			else:
 				if (i,j) in labels:
 					if labels[(i,j)] in assignments[0]:
-						printc("%-*s" % (8, assignments[0][labels[(i,j)]]))
+						printc("%-*s" % (width, assignments[0][labels[(i,j)]]))
 					elif labels[(i,j)] in assignments[1]:
-						printc("%-*s" % (8, assignments[1][labels[(i,j)]]), bcolors.FAIL),
+						printc("%-*s" % (width, assignments[1][labels[(i,j)]]), bcolors.FAIL),
 				else:
-					print "%-*s" % (8, "x"),
+					print "%-*s" % (width, "x"),
 			if j == n-1:
 				print "\n"
 
