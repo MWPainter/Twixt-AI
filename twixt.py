@@ -31,6 +31,24 @@ def copyDictSet(d):
             e[x].add(y)
     return e
 
+def dotProduct(v1, v2):
+    return v1[0] * v2[0] + v1[1] * v2[1]
+
+def moveForward(direction, pin, neighbors):
+    results = []
+    for pin2 in neighbors:
+        v = (pin[0] - pin2[0], pin[1] - pin2[1])
+        x = dotProduct(direction, (pin, pin2))
+        if x == 0:
+            x = 1
+            print "should not be here!"
+        results.append(x/abs(x))
+    if abs(sum(results)) == len(results):
+        return True
+    else:
+        return False
+    
+
 class twixtBoard:
     def __init__(self, N):
         # size of the table, including the exclusive rows and columns
@@ -223,8 +241,9 @@ class twixtBoard:
     # special pins making good strategic options
     def specialPins(self, agent, pin):
         special = []
+        direction = (agent, 1-agent)
         # 2-step away pins are the first 6, 3-step away pins are the last 2
-        change = [(0, 4), (-4, 0), (1, 3), (1, -3), (3, 1), (3, -1), (-4, -4), (-4, 4), (3, 3), (3, -3)]
+        change = [(direction[0] * 4, direction[1] * 4), (1 + direction[0] * 2, 1 + direction[1] * 2), (1 + direction[0] * 2, -(1 + direction[1] * 2)), (-4, -4), (-4, 4), (3, 3), (3, -3)]
         pins = []
         for c in change:
             pins.append((pin[0] + c[0], pin[1] + c[1]))
@@ -244,16 +263,15 @@ class twixtBoard:
 
     def updateRunningScore(self):
         lastPin = self.lastAddedPin[self.agent]
+        direction = (self.agent, 1 - self.agent)
         score = 0
-        
-        if self.winner() >= 0:
+        if abs(self.runningScore) == 10000000:
             return
-        
         if self.winner() == self.agent:
-            self.runningScore = float('inf')
+            self.runningScore = 10000000
             return
         elif self.winner() == 1 - self.agent:
-            self.runningScore = -float('inf')
+            self.runningScore = -10000000
             return
 
         if len(self.pins) == 1:
@@ -266,10 +284,18 @@ class twixtBoard:
             # distance one is bad
             score -= 1.0 * len(self.getNeighbors(lastPin))
             # special pins are good
-            score += 2.0 * len(self.specialPins(self.agent, lastPin))
-            # creating bridges is good
+            score += 2.0 * (len(self.specialPins(self.agent, lastPin)) != 0)
+            # creating bridges is good if
+            # 1. only one new pin has been created or,
+            # 2. the new pin does not connect two pins already connected or,
+            # 3. the new pin gets closer to either side of the board (good for the agent) than its neighbors
             if lastPin in self.bridges:
-                score += 2.0 * len(self.bridges[lastPin])
+                # moving forward
+                score += 2.0 * (moveForward(direction, lastPin, [pin for pin, val in self.bridges[lastPin]]))
+                # connecting points of different label
+                score += 1.0 * (len(set([self.label[x] for x in self.bridges[pin]])) != 1)
+                # making at least one connection
+                score += 1.0 * (len(self.bridges[lastPin]) != 0)
             # reducing opponent possibilities is great
             #score += self.oppLoss(self.agent, lastPin)
             self.runningScore += (1 - 2 * self.agent) * score
