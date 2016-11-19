@@ -38,7 +38,7 @@ def moveForward(direction, pin, neighbors):
     results = []
     for pin2 in neighbors:
         v = (pin[0] - pin2[0], pin[1] - pin2[1])
-        x = dotProduct(direction, (pin, pin2))
+        x = dotProduct(direction, v)
         if x == 0:
             x = 1
             print "should not be here!"
@@ -138,10 +138,11 @@ class twixtBoard:
         # check to see whether any bridges connected to the watchlist conflict
         for pin in watchList:
             if pin in self.bridges:
-                otherPin = [x for x in self.bridges[pin]][0]
-                if intersect((pin, otherPin), (oldPin, newPin)):
-                    #print oldPin, newPin, "bridge conflict with", pin, otherpin
-                    return False
+                otherPins = [x for x in self.bridges[pin]]
+                for other in otherPins:
+                    if intersect((pin, other), (oldPin, newPin)):
+                        #print oldPin, newPin, "bridge conflict with", pin, otherpin
+                        return False
         #print "all is cool"
         return True
 
@@ -291,7 +292,7 @@ class twixtBoard:
             # 3. the new pin gets closer to either side of the board (good for the agent) than its neighbors
             if lastPin in self.bridges:
                 # moving forward
-                score += 2.0 * (moveForward(direction, lastPin, [pin for pin, val in self.bridges[lastPin]]))
+                score += 2.0 * (moveForward(direction, lastPin, [pin for pin, val in self.bridges[lastPin].iteritems()]))
                 # connecting points of different label
                 score += 1.0 * (len(set([self.label[x] for x in self.bridges[pin]])) != 1)
                 # making at least one connection
@@ -300,9 +301,58 @@ class twixtBoard:
             #score += self.oppLoss(self.agent, lastPin)
             self.runningScore += (1 - 2 * self.agent) * score
 
+    def getBestEval(self, queryAgent):
+        grid = []
+
+        for i in range(self.N):
+            for j in range(self.N):
+                if j == 0:
+                    grid.append([])
+                grid[i].append(+float('inf'))
+
+        if queryAgent == 0:
+            for j in range(self.N):
+                grid[0][j] = 0
+            for i in range(1, self.N):
+                for j in range(self.N):
+                    if (i, j) in self.bridges:
+                        for pin, agent in self.bridges[(i, j)].iteritems():
+                            if agent == 0:
+                                #print i, j, pin, grid[i-1][j]+1, grid[pin[0]][pin[1]]
+                                grid[i][j] = min(grid[i][j], grid[i-1][j] + 1, grid[pin[0]][pin[1]])
+                                #print grid[i][j]
+                            else:
+                                grid[i][j] = grid[i-1][j] + 1
+                    else:
+                        grid[i][j] = grid[i-1][j] + 1
+
+            return self.N - min(grid[self.N - 1])
+        else:
+            for i in range(self.N):
+                grid[i][0] = 0
+            for j in range(1, self.N):
+                for i in range(self.N):
+                    if (i, j) in self.bridges:
+                        for pin, agent in self.bridges[(i, j)].iteritems():
+                            if agent == 1:
+                                #print i, j, pin, grid[i-1][j]+1, grid[pin[0]][pin[1]]
+                                grid[i][j] = min(grid[i][j], grid[i][j-1] + 1, grid[pin[0]][pin[1]])
+                                #print grid[i][j]
+                            else:
+                                grid[i][j] = grid[i][j-1] + 1
+                    else:
+                        grid[i][j] = grid[i][j-1] + 1
+
+            result = float('inf')
+            for i in range(self.N):
+                if grid[i][self.N-1] < result:
+                    result = grid[i][self.N-1]
+            return self.N - result
+
     # returns a better and more specialized score than getScore
-    def getBetterScore(self):        
-        return self.runningScore
+    def getBetterScore(self): 
+        return self.getBestEval() 
+        # return self.runningScore
         
         
         

@@ -6,13 +6,15 @@ class MinimaxAgent(object):
 		self.depth = int(depth)
 
 	def evaluationFunction(self, currentGameState):
-		return currentGameState.getBetterScore()
+		#print currentGameState.agent, currentGameState.getBestEval(currentGameState.agent)
+		return currentGameState.getBestEval(currentGameState.agent)
 
 	def getAction(self, gameState):
 
 		def oppMove(gameState, currentDepth, alpha, beta):
 
 			if (gameState.winner() >= 0):
+				gameState.agent = 1 - gameState.agent
 				return (self.evaluationFunction(gameState), None)
 			
 			legalMoves = gameState.getLegalAction(gameState.agent)
@@ -62,7 +64,7 @@ class MaximinAgent(object):
 		self.depth = int(depth)
 
 	def evaluationFunction(self, currentGameState):
-		return currentGameState.getBetterScore()
+		return currentGameState.getBestEval(currentGameState.agent)
 
 	def getAction(self, gameState):
 
@@ -91,6 +93,7 @@ class MaximinAgent(object):
 		def oppMove(gameState, currentDepth, alpha, beta):
 
 			if (gameState.winner() >= 0):
+				gameState.agent = 1 - gameState.agent
 				return (self.evaluationFunction(gameState), None)
 
 			legalMoves = gameState.getLegalAction(gameState.agent)
