@@ -6,7 +6,7 @@ n = 7
 iter = 1
 depth = 1
 width = 4
-agent = [agent.HumanAgent(0), agent.MinimaxAgent(depth)]
+agent = [agent.MinimaxAgent(2), agent.MinimaxAgent(depth)]
 
 def drawBoard(n, labels, assignments, bridges):
 	for i in range(n):
