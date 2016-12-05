@@ -6,12 +6,15 @@ def twixtToGrid(twixt):
     """
     Helper function.
     Takes and instance of a twixt game and converts it into a grid of ints. +1 for agent 1, -1 for agent 0 and 0 if no 
-    pin.
+    pin. Twixat.pins is a dict from (i,j) coordinates to 0,1, representing which agent the pin (i,j) belongs to. The
+    function 2x-1 maps 1->1, 0->-1. 
 
     :param twixt: A state of the game of twixt
     :return: A grid of pins
     """
-    # TODO
+    grid = [[0 for _ in twixt.N] for _ in twixt.N]
+    for (i,j) in twixt.pins:
+        grid[i][j] = twixt.pins[(i,j)] * 2 - 1
 
 
 def flipGrid(grid):
