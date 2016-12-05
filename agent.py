@@ -11,6 +11,7 @@ class HumanAgent(object):
 			print 'Enter y:',
 			y = raw_input().strip()
 			if (int(x), int(y)) in gameState.getLegalAction(self.index):
+                print "Please enter valid move"
 				break
 		return (int(x), int(y))
 
