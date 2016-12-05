@@ -4,11 +4,11 @@ from util import printc, bcolors
 
 n = 7
 iter = 1
-depth = 2
+depth = 1
 width = 4
-agent = [agent.MinimaxAgent(depth), agent.MinimaxAgent(depth)]
+agent = [agent.HumanAgent(0), agent.MinimaxAgent(depth)]
 
-def drawBoard(n, labels, assignments):
+def drawBoard(n, labels, assignments, bridges):
 	for i in range(n):
 		for j in range(n):
 			if (i == 0 or i == n-1) and (j == 0 or j == n-1):
@@ -16,9 +16,17 @@ def drawBoard(n, labels, assignments):
 			else:
 				if (i,j) in labels:
 					if labels[(i,j)] in assignments[0]:
-						printc("%-*s" % (width, assignments[0][labels[(i,j)]]))
+						#printc("%-*s" % (width, assignments[0][labels[(i,j)]])),
+						if (i,j) in bridges:
+							printc('O', bcolors.OKBLUE, 'bold'),
+						else:
+							printc('O'),
 					elif labels[(i,j)] in assignments[1]:
-						printc("%-*s" % (width, assignments[1][labels[(i,j)]]), bcolors.FAIL),
+						#printc("%-*s" % (width, assignments[1][labels[(i,j)]]), bcolors.FAIL),
+						if (i,j) in bridges:
+							printc('O', bcolors.FAIL, 'bold'),
+						else:
+							printc('O', bcolors.FAIL),
 				else:
 					print "%-*s" % (width, "x"),
 			if j == n-1:
@@ -35,7 +43,7 @@ while tb.winner() == -1:
     tb.updateBoard(action)
     #print "pins: ", tb.pins
     #print "bridges: ", tb.bridges
-    drawBoard(n, tb.label, tb.assignment)
+    drawBoard(n, tb.label, tb.assignment, tb.bridges)
 
 print tb.winner()
 

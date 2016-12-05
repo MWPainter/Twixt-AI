@@ -8,5 +8,10 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-def printc(str, color = bcolors.OKBLUE):
-	print color + str + bcolors.ENDC,
+width = 4
+
+def printc(str, color = bcolors.OKBLUE, bold = 'notbolded'):
+	if bold == 'bold':
+		print color + bcolors.BOLD + bcolors.UNDERLINE + "%-*s" % (width, str) + bcolors.ENDC,
+	else:
+		print color + "%-*s" % (width, str) + bcolors.ENDC,

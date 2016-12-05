@@ -1,12 +1,24 @@
 import twixt
 
+class HumanAgent(object):
+	def __init__(self, agentIndex):
+		self.index = agentIndex
+
+	def getAction(self, gameState):
+		while True:
+			print 'Enter x:',
+			x = raw_input().strip()
+			print 'Enter y:',
+			y = raw_input().strip()
+			if (int(x), int(y)) in gameState.getLegalAction(self.index):
+				break
+		return (int(x), int(y))
+
 class MinimaxAgent(object):
 	def __init__(self, depth = '2'):
-		self.index = 0
 		self.depth = int(depth)
 
 	def evaluationFunction(self, currentGameState):
-		#print currentGameState.agent, currentGameState.getBestEval(currentGameState.agent)
 		return currentGameState.getBestEval(currentGameState.agent)
 
 	def getAction(self, gameState):
@@ -15,18 +27,18 @@ class MinimaxAgent(object):
 
 			if (gameState.winner() >= 0):
 				gameState.agent = 1 - gameState.agent
-				return (self.evaluationFunction(gameState), None)
+				return (self.evaluationFunction(gameState), None, self.depth - currentDepth)
 			
 			legalMoves = gameState.getLegalAction(gameState.agent)
 			if legalMoves == set([]):
-				return (self.evaluationFunction(gameState), None)
+				return (self.evaluationFunction(gameState), None, self.depth)
 	    
-			optimalScoreActionPair = (float('inf'), None)
+			optimalScoreActionPair = (float('inf'), None, None)
 			for action in legalMoves:
-				score, optimalAction = agentMove(gameState.generateSuccessor(gameState.agent, action), currentDepth-1, alpha, beta)
+				score, optimalAction, endDepth = agentMove(gameState.generateSuccessor(gameState.agent, action), currentDepth-1, alpha, beta)
 				
-				if score < optimalScoreActionPair[0]:
-					optimalScoreActionPair = (score, action)
+				if score < optimalScoreActionPair[0] or (score == optimalScoreActionPair[0] and endDepth < optimalScoreActionPair[2]):
+					optimalScoreActionPair = (score, action, endDepth)
 				if score < beta:
 					beta = score
 				if alpha >= beta:
@@ -37,18 +49,18 @@ class MinimaxAgent(object):
 		def agentMove(gameState, currentDepth, alpha, beta):
 
 			if (currentDepth == 0) or (gameState.winner() >= 0):
-				return (self.evaluationFunction(gameState), None)
+				return (self.evaluationFunction(gameState), None, self.depth - currentDepth)
             
 			legalMoves = gameState.getLegalAction(gameState.agent)
 			if legalMoves == set([]):
-				return (self.evaluationFunction(gameState), None)
+				return (self.evaluationFunction(gameState), None, self.depth)
 	    
-			optimalScoreActionPair = (-float('inf'), None)
+			optimalScoreActionPair = (-float('inf'), None, None)
 			for action in legalMoves:
-				score, optimalAction = oppMove(gameState.generateSuccessor(gameState.agent, action), currentDepth, alpha, beta)
+				score, optimalAction, endDepth = oppMove(gameState.generateSuccessor(gameState.agent, action), currentDepth, alpha, beta)
 
-				if score > optimalScoreActionPair[0]:
-					optimalScoreActionPair = (score, action)
+				if score > optimalScoreActionPair[0] or (score == optimalScoreActionPair[0] and endDepth < optimalScoreActionPair[2]):
+					optimalScoreActionPair = (score, action, endDepth)
 				if score > alpha:
 					alpha = score
 				if alpha >= beta:
@@ -60,7 +72,6 @@ class MinimaxAgent(object):
 
 class MaximinAgent(object):
 	def __init__(self, depth = '2'):
-		self.index = 0
 		self.depth = int(depth)
 
 	def evaluationFunction(self, currentGameState):
@@ -118,7 +129,6 @@ class MaximinAgent(object):
 class ExpectimaxAgent(object):
 
 	def __init__(self, depth = '2'):
-		self.index = 0
 		self.depth = int(depth)
 
 	def evaluationFunction(self, currentGameState):
