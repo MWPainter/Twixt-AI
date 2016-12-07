@@ -1,3 +1,5 @@
+from collections import defaultdict
+import random, operator
 import twixt
 
 class HumanAgent(object):
@@ -177,3 +179,30 @@ class ExpectimaxAgent(object):
 
 		return agentMove(gameState, self.depth, -float('inf'), float('inf'))[1]
 
+class PureMCAgent(object):
+
+	def __init__(self, iter = '50000'):
+		self.iter = int(iter)
+
+	def getAction(self, gameState):
+		actionCounts = defaultdict(int)
+		legalActions = gameState.getLegalAction(gameState.agent)
+
+		for i in range(self.iter):
+			firstAction = random.sample(legalActions, 1)[0]
+			mc = gameState.generateSuccessor(gameState.agent, firstAction)
+			
+			if mc.winner() == gameState.agent:
+				actionCounts[firstAction] = actionCounts[firstAction]+1
+				continue
+
+			while mc.winner() == -1 and len(mc.getLegalAction(mc.agent)) > 0:
+				action = random.sample(mc.getLegalAction(mc.agent), 1)[0]
+				mc.updateBoard(action)
+			if mc.winner() == gameState.agent:
+				actionCounts[firstAction] = actionCounts[firstAction]+1
+
+		if len(actionCounts) == 0:
+			return firstAction
+		else:
+			return max(actionCounts.iteritems(), key=operator.itemgetter(1))[0]
