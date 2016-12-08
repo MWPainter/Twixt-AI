@@ -318,9 +318,7 @@ class twixtBoard:
                     if (i, j) in self.bridges:
                         for pin, agent in self.bridges[(i, j)].iteritems():
                             if agent == 0:
-                                #print i, j, pin, grid[i-1][j]+1, grid[pin[0]][pin[1]]
                                 grid[i][j] = min(grid[i][j], grid[i-1][j] + 1, grid[pin[0]][pin[1]])
-                                #print grid[i][j]
                             else:
                                 grid[i][j] = grid[i-1][j] + 1
                     else:
@@ -335,9 +333,7 @@ class twixtBoard:
                     if (i, j) in self.bridges:
                         for pin, agent in self.bridges[(i, j)].iteritems():
                             if agent == 1:
-                                #print i, j, pin, grid[i-1][j]+1, grid[pin[0]][pin[1]]
                                 grid[i][j] = min(grid[i][j], grid[i][j-1] + 1, grid[pin[0]][pin[1]])
-                                #print grid[i][j]
                             else:
                                 grid[i][j] = grid[i][j-1] + 1
                     else:
