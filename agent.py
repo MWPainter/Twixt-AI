@@ -217,7 +217,7 @@ class TreeNode(object):
         self.value = 0.0 # average value witnessed at this state
         self.numVisits = 0 # times visited node
         self.children = {} # a dictionary of (action -> successor tree node) values
-        self.weight = weight # weight of selecting this node from parent originally
+        self.weight = float(weight) # weight of selecting this node from parent originally
         self.parent = parent # pointer to parent, if pointer is None then root node
 
     
