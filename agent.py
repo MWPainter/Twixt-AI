@@ -13,7 +13,9 @@ class HumanAgent(object):
 			x = raw_input().strip()
 			print 'Enter y:'
 			y = raw_input().strip()
-		return (int(x), int(y))
+			if (int(x), int(y)) in gameState.getLegalAction(self.index):
+				break
+        return (int(x), int(y))
 
 class MinimaxAgent(object):
 	def __init__(self, depth = '2'):
@@ -330,7 +332,7 @@ class MCTreeSearch(object):
         optimal action from the root node and it's successors.
 
         4 stages: Selection, Expansion, Simulation, Backpropogation
-
+        
         In this implementation expansion is split into two phases. Usually expansion consists 
         of selection until we find a state not cached in the tree, we add that one node. 
         Here we wish to explore according to a policy 'selectionPolicy', so we add all successors 
@@ -340,7 +342,7 @@ class MCTreeSearch(object):
 
         Finally, after all the searching, we look at the action that leads to the best avg reward
         from the rootNode (the node with state 'gameState'), and return that action to play.
-        
+
         :param gameState: The current state of the game
         :return: The action leading to the best (avg) reward from the search
         """
