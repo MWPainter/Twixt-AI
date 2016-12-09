@@ -2,6 +2,7 @@ from collections import defaultdict
 import random, operator
 import twixt
 import util
+import copy
 
 class HumanAgent(object):
     def __init__(self, agentIndex):
@@ -213,7 +214,7 @@ class PureMCAgent(object):
 class TreeNode(object):
     def __init__(self, state, weight, parent = None):
         self.state = state # state being represented as this 
-        self.value = 0 # average value witnessed at this state
+        self.value = 0.0 # average value witnessed at this state
         self.numVisits = 0 # times visited node
         self.children = {} # a dictionary of (action -> successor tree node) values
         self.weight = weight # weight of selecting this node from parent originally
@@ -307,14 +308,33 @@ class TreeNode(object):
 
         We also hard code that this is for a two player game, with agents 0, 1. As used in twixt.py
 
+        Finally, note that when we expand in pure MCTS we one node to child list. Here we add all of 
+        the children in one go. We may call expand on this node again to add 'another child', but in 
+        the implementation we added all children in one go. So if children is non empty, then return 
+        immediately
+
         :param policy: A stochastic policy, taking a state and returning a map, actions -> weights
         """
+        if self.children != {}: return
         actionWeights = policy(self.state)
         newAgent = 1 - self.state.agent
         for action in actionWeights:
             succ = self.state.generateSuccessor(newAgent, action)
             self.children[action] = TreeNode(succ, actionWeights[action], self)
 
+        
+    def pprint(self):
+        """
+        Pretty print the tree rooted at this node, displaying all the values encorporated
+        """
+        def pprintStr(node):
+            s = "(" + str(node.value) 
+            for action in node.children:
+                s = s + ", " + pprintStr(node.children[action])
+            s = s + ")"
+            return s
+
+        print pprintStr(self)
 
 
 
@@ -387,18 +407,28 @@ class MCTreeSearch(object):
         in the tree over time. We walk the tree until we reach a leaf node, which we return
 
         Leaf nodes are indicated by 'getSuccInTree' returning None
+        
+        When walking the tree we repetatively do the following:
+        1. get weights for actions at current state
+        2. if weights empty, then there are no children, node is a leaf and we should return it
+        3. pick a random action
+        4. check if the successor is in the tree
+        5. if not, then we need 
+        6. update node iterating variable
 
         :param root: The base TreeNode that we will be starting the walk from
         :return: A leaf node, rooted at 'root', arrived to by stochastically walking tree 
         """
-        lastNode = root
         node = root
-        while node != None:
+        while True:
             actionToWeight = node.getActionToWeightMap()
+            if actionToWeight == {}:
+                return node
             action = util.selectRandomKey(actionToWeight)
-            lastNode = node
-            node = node.getSuccInTree(action)
-        return lastNode
+            nextNode = node.getSuccInTree(action)
+            if nextNode == None:
+                return node
+            node = nextNode
 
 
     def expand(self, node):
@@ -433,11 +463,13 @@ class MCTreeSearch(object):
         0 for a draw). We keep on simulating whilst "no one has one and there is a legal 
         move left"
 
+        Remember to copy the state so that we don't clobber the state in the tree
+
         :param root: the node to simulate the game from
         :param agent: the agent who we are trying to pick a good move for (back in the call to 
             'getAction').
         """
-        state = root.state
+        state = copy.deepcopy(root.state)
         while state.winner() == -1 and len(state.getLegalAction(state.agent)) > 0:
             actionToWeight = self.simPolicy(state)
             action = util.selectRandomKey(actionToWeight)
@@ -445,11 +477,11 @@ class MCTreeSearch(object):
 
         winner = state.winner()
         if winner == agent:
-            return 1
+            return 1.0
         elif winner == 1-agent:
-            return -1
+            return -1.0
         elif winner == 2 or winner == -1: # 2 indicates a draw, -1 means no one has won, but if here there is no legal move left
-            return 0
+            return 0.0
         else:
             raise Exception("Something's weird with win conditions. In 'simulate', for MCTS")
 
