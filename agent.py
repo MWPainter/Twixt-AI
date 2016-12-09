@@ -8,14 +8,11 @@ class HumanAgent(object):
 		self.index = agentIndex
 
 	def getAction(self, gameState):
-		while True:
-			print 'Enter x:',
+	    while True:
+			print 'Enter x:'
 			x = raw_input().strip()
-			print 'Enter y:',
+			print 'Enter y:'
 			y = raw_input().strip()
-			if (int(x), int(y)) in gameState.getLegalAction(self.index):
-                print "Please enter valid move"
-				break
 		return (int(x), int(y))
 
 class MinimaxAgent(object):
@@ -457,4 +454,8 @@ class MCTreeSearch(object):
             node = node.parent
 
 
+# Cheap dirty policy for testing
+def uniformPolicy(state):
+    actions = gameState.getLegalAction(state.agent)
+    return {action: 1 for action in actions}
 
