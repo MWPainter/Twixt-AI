@@ -1,4 +1,5 @@
 from collections import defaultdict
+from util import printc, bcolors
 
 def ccw(pin1, pin2, pin3):
     return (pin3[1] - pin1[1]) * (pin2[0] - pin1[0]) > (pin2[1] - pin1[1]) * (pin3[0] - pin1[0])
@@ -163,7 +164,7 @@ class twixtBoard:
     def updateBoard(self, action):
         actions = self.getLegalAction(self.agent)
         if action not in actions:
-            print "Action not allowed!", action
+            #print "Action not allowed!", action
             return
         if action in self.boardActions:
             self.boardActions.remove(action)
@@ -261,6 +262,34 @@ class twixtBoard:
         for k, v in self.bridges[pin].iteritems():
             newBridges.append(k)
         return 0
+
+    # pretty print
+    def pprint(self):
+        width = 4
+        for i in range(self.N):
+            for j in range(self.N):
+                if (i == 0 or i == self.N-1) and (j == 0 or j == self.N-1):
+                    print "%-*s" % (width, ""),
+                else:
+                    if (i,j) in self.label:
+                        if self.label[(i,j)] in self.assignment[0]:
+                            #printc("%-*s" % (width, assignments[0][labels[(i,j)]])),
+                            if (i,j) in self.bridges:
+                                printc('O', bcolors.OKBLUE, 'bold'),
+                            else:
+                                printc('O'),
+                        elif self.label[(i,j)] in self.assignment[1]:
+                            #printc("%-*s" % (width, assignments[1][labels[(i,j)]]), bcolors.FAIL),
+                            if (i,j) in self.bridges:
+                                printc('O', bcolors.FAIL, 'bold'),
+                            else:
+                                printc('O', bcolors.FAIL),
+                    else:
+                        print "%-*s" % (width, "x"),
+                if j == self.N-1:
+                    print "\n"
+
+
 
     def updateRunningScore(self):
         lastPin = self.lastAddedPin[self.agent]

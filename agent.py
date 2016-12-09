@@ -357,7 +357,7 @@ class MCTreeSearch(object):
             self.backPropogation(newLeafNode, value) # back propogation
 
         optAction = None
-        optValue = -int('inf')
+        optValue = -float('inf')
         for action in rootNode.children:
             childNode = rootNode.children[action]
             if childNode.value > optValue:
@@ -418,14 +418,15 @@ class MCTreeSearch(object):
         Simulate.
         Simulates the rest of the game, stochastically, from node 'root', using policy 
         'simPolicy'. Returns a value of the game. (1 if the agent wins, -1 if they don't, 
-        0 for a draw)
+        0 for a draw). We keep on simulating whilst "no one has one and there is a legal 
+        move left"
 
         :param root: the node to simulate the game from
         :param agent: the agent who we are trying to pick a good move for (back in the call to 
             'getAction').
         """
         state = root.state
-        while state.winner() == -1:
+        while state.winner() == -1 and len(state.getLegalAction(state.agent)) > 0:
             actionToWeight = self.simPolicy(state)
             action = util.selectRandomKey(actionToWeight)
             state.updateBoard(action)
@@ -435,7 +436,7 @@ class MCTreeSearch(object):
             return 1
         elif winner == 1-agent:
             return -1
-        elif winner == 2: # 2 indicates a draw 
+        elif winner == 2 or winner == -1: # 2 indicates a draw, -1 means no one has won, but if here there is no legal move left
             return 0
         else:
             raise Exception("Something's weird with win conditions. In 'simulate', for MCTS")
