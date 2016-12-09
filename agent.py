@@ -207,3 +207,133 @@ class PureMCAgent(object):
 			return firstAction
 		else:
 			return max(actionCounts.iteritems(), key=operator.itemgetter(1))[0]
+
+
+
+class TreeNode(object):
+    def __init__(self, state, weight, parent = None):
+        self.state = state # state being represented as this 
+        self.value = 0 # average value witnessed at this state
+        self.numVisits = 0 # times visited node
+        self.children = [] # list of (action, successor tree node) pairs
+        self.isLeaf = True # true if tree node is a leaf (self.children == empty list currently)
+        self.weight = weight # weight of selecting this node from parent originally
+        self.parent = self # pointer to parent, if pointer is to self then root node
+
+    def witnessValue(value):
+        """
+        Updates the average value (running avg) according to this instance of value we are witnessing
+        This incremenets the number of time's we've visited the node also
+
+        :param value: the value we witnesses as a result of playing the game through this node
+        :return: None
+        """
+        self.numVisits += 1
+        n = self.numVisits
+        self.value = (value + (n-1) * self.value) / n 
+
+    def getWeight(self):
+        """
+        Returns the original weighting, but decays accoring to the ammount we 
+        have explored, where if w is the original weight, and n is the number of 
+        times we have visited this state, we return (w/1+n)
+
+        N.B. other weightDecay methods exist and work, arbitrarily following alphaGo here
+        """
+        return self.weight / (1 + self.numVisits)
+
+    def getSuccInTree(self, action):
+        #TODO: Select a successor according to an action given
+        #TODO: This needs return none if the successor doesn't exist in tree
+
+    def getSuccAfterExpand(self, action):
+        if self.children == []: raise Exception("Called 'TreeNode.getSuccAfterExpand' either on a end state of the game or without calling expand before")
+        #TODO: Gets a successor AFTER the node has been expanded
+        #TODO: This means that numVisits == 0 is fair game now, and successor list isn't empty
+
+    def forState(self, state):
+        """
+        Returns if this is a tree node for the state 'state'
+
+        :param state: the state
+        :return: true if self.state is equal to state
+        """
+        #TODO: Implement state equality
+        return self.state == state
+
+    def __eq__(self, other):
+        """
+        Computes if self == other
+
+        :param other: another TreeNode object
+        :return: true if TreeNodes are considered equal
+        """
+        return self.state == other.state
+
+    def __ne__(self, other):
+        """
+        Computes if self != other
+
+        :param other: another TreeNode object
+        :return: true if TreeNodes are considered not equal
+        """
+        return not self == other
+
+
+
+class MCTreeSearch(object):
+    def __init__(self, iter='50000', selectionPolicy, simulationPolicy, simulationDepth = 0, evalFn = None):
+        """
+        :param iter: Number of iterations for each 'getAction' search
+        :param selectonPolicy: Stochastic policy used for selecting nodes to expand, takes a 
+            state as an argument and returns a list of (action, weight) pairs
+        :param simulationPolicy: Stochastic policy used for simulating a game
+        :param simulationDepth: depth to simulate to, default 0 means no max depth
+        :param evalFn: evaluation function from states to some value, only used if simulationDepth > 0
+        """
+        self.iter = int(iter)
+        self.selPolicy = selectionPolicy
+        self.simPolicy = simulationPolicy
+        self.simDepth = simulationDepth
+        self.eval = evalFn
+
+	def getAction(self, gameState):
+        """
+        Returns the action accodring to a monte carlo tree search. It makes a root node 
+        from the given state, then repeats the 4 stages of MCTS, and finally extracts the 
+        optimal action from the root node and it's successors.
+
+        4 stages: Selection, Expansion, Simulation, Backpropogation
+
+        In this implementation expansion is split into two phases. Usually expansion consists 
+        of selection until we find a state not cached in the tree, we add that one node. 
+        Here we wish to explore according to a policy 'selectionPolicy', so we add all successors 
+        to the cache tree at once, we then 'walk the tree' again, which will just select one of 
+        the successors. This creates a need to identify nodes with 'numVisits' of 0 as having 
+        not been added yet. This implementation detail is dealt with in 'getSuccInTree(action)'
+        
+        :param gameState: The current state of the game
+        :return: The action leading to the best (avg) reward from the search
+        """
+        rootNode = makeTree(gameState)
+        for i in range(self.iter):
+            leafNode = self.walkTree(rootNode) # selection
+            self.expand(leafState) # expansion1
+            newLeafState = leafNode.step(policy) # expansion2: select one of the new children
+            value = self.simulate(newLeafState) # simulation
+            self.backPropogation(newLeafState, value) #back propocation
+
+        optAction = None
+        optValue = -int('inf')
+        for (action, childNode) in rootNode.children:
+            if childNode.value > optValue:
+                optAction = action
+                optValue = childNode.value
+
+        return optAction
+
+
+
+
+
+
