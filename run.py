@@ -6,7 +6,7 @@ n = 8
 iter = 1
 depth = 1
 width = 4
-agent = [agent.MCTreeSearch(agent.uniformPolicy, agent.uniformPolicy, 5000), agent.PureMCAgent(20000)]
+agent = [agent.MCTreeSearch(agent.randomPolicy, agent.uniformPolicy, 10000), agent.PureMCAgent(10000)]
 
 def drawBoard(n, labels, assignments, bridges):
 	for i in range(n):

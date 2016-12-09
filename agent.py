@@ -254,6 +254,17 @@ class TreeNode(object):
         return self.weight / (1 + self.numVisits)
 
 
+    def endState(self):
+        """
+        If there is no winner yet explicitly, or there are no legal moves left, then we 
+        are in an end state
+
+        :return: If this is the tree node for an end state
+        """
+        return not(self.state.winner() == -1 and len(self.state.getLegalAction(self.state.agent)) > 0)
+
+
+
     def getSuccInTree(self, action):
         """
         Operates entirely within the current tree. Nodes with a value of 'numVisits' of zero 
@@ -351,6 +362,7 @@ class MCTreeSearch(object):
         agent = rootNode.state.agent
         for i in range(self.iter):
             leafNode = self.walkTree(rootNode) # selection
+            if (leafNode.endState()): continue # if our node we wish to expand is an end state, we can't do anything (and the value is deterministic and correct already) so skip it
             self.expand(leafNode) # expansion1
             newLeafNode = self.step(leafNode) # expansion2: select one of the new children
             value = self.simulate(newLeafNode, agent) # simulation
@@ -463,3 +475,6 @@ def uniformPolicy(state):
     actions = state.getLegalAction(state.agent)
     return {action: 1 for action in actions}
 
+def randomPolicy(state):
+    actions = state.getLegalAction(state.agent)
+    return {action: random.random() for action in actions}
