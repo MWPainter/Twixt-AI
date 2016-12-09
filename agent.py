@@ -1,6 +1,7 @@
 from collections import defaultdict
 import random, operator
 import twixt
+import util
 
 class HumanAgent(object):
 	def __init__(self, agentIndex):
@@ -215,12 +216,22 @@ class TreeNode(object):
         self.state = state # state being represented as this 
         self.value = 0 # average value witnessed at this state
         self.numVisits = 0 # times visited node
-        self.children = [] # list of (action, successor tree node) pairs
-        self.isLeaf = True # true if tree node is a leaf (self.children == empty list currently)
+        self.children = {} # a dictionary of (action -> successor tree node) values
         self.weight = weight # weight of selecting this node from parent originally
-        self.parent = self # pointer to parent, if pointer is to self then root node
+        self.parent = parent # pointer to parent, if pointer is None then root node
 
-    def witnessValue(value):
+    
+    def getActionToWeightMap(self):
+        """
+        :return: a map from possible actions to weights (according to the children nodes)
+        """
+        actionMap = {}
+        for action in self.children:
+            actionMap[action] = self.children.getWeight()
+        return actionMap
+
+
+    def witnessValue(self, value):
         """
         Updates the average value (running avg) according to this instance of value we are witnessing
         This incremenets the number of time's we've visited the node also
@@ -232,6 +243,7 @@ class TreeNode(object):
         n = self.numVisits
         self.value = (value + (n-1) * self.value) / n 
 
+
     def getWeight(self):
         """
         Returns the original weighting, but decays accoring to the ammount we 
@@ -242,42 +254,58 @@ class TreeNode(object):
         """
         return self.weight / (1 + self.numVisits)
 
+
     def getSuccInTree(self, action):
-        #TODO: Select a successor according to an action given
-        #TODO: This needs return none if the successor doesn't exist in tree
+        """
+        Operates entirely within the current tree. Nodes with a value of 'numVisits' of zero 
+        are considered NOT part of the tree here. If the successor state of the tree's state 
+        is in the tree, we return it.
+
+        :param action: The action we are trying to take
+        :return: Successor state's node after taking action 'action'. Return None if successor 'not' in tree
+        """
+        if not action in self.children: return None
+        if self.children[action].numVisits == 0: return None
+        return self.children[action]
+
 
     def getSuccAfterExpand(self, action):
-        if self.children == []: raise Exception("Called 'TreeNode.getSuccAfterExpand' either on a end state of the game or without calling expand before")
-        #TODO: Gets a successor AFTER the node has been expanded
-        #TODO: This means that numVisits == 0 is fair game now, and successor list isn't empty
-
-    def forState(self, state):
         """
-        Returns if this is a tree node for the state 'state'
+        Gets the successor to the current node according to some action 'action'. Assumes that we are 
+        in what was a leaf node and have expanded this node. If used properly, we should be returning 
+        a 'newly created' node, which has 'numVisits' equal to 0
 
-        :param state: the state
-        :return: true if self.state is equal to state
+        :param action: action that we are taking
+        :return: The successor state's node after taking action 'action'.
         """
-        #TODO: Implement state equality
-        return self.state == state
+        if self.children == {}: 
+            raise Exception("Called 'TreeNode.getSuccAfterExpand' either on a end state of the game or without calling expand before")
+        if not action in self.children: return None
+        return self.children[action]
 
-    def __eq__(self, other):
-        """
-        Computes if self == other
 
-        :param other: another TreeNode object
-        :return: true if TreeNodes are considered equal
+    def expand(self, policy):
         """
-        return self.state == other.state
+        Populates the dictionary of children nodes, initialising the weights to the weights allocated 
+        by some stochastic policy. Here we take liberty of assuming that different actions will lead 
+        to unique states. This assumption isn't necessarily true, but we make it for game playing. 
+        (And is true in this case). 
 
-    def __ne__(self, other):
-        """
-        Computes if self != other
+        To populate children we basically look at the policy for this state, iterate through the 
+        actions and add a node for each action, with the successor state, weight and link back to 
+        this node
 
-        :param other: another TreeNode object
-        :return: true if TreeNodes are considered not equal
+        We also hard code that this is for a two player game, with agents 0, 1. As used in twixt.py
+
+        :param policy: A stochastic policy, taking a state and returning a map, actions -> weights
         """
-        return not self == other
+        actionWeights = policy(self.state)
+        newAgent = 1 - self.state.agent
+        for action in actionWeights:
+            succ = self.state.generateSuccessor(newAgent, action)
+            self.children[action] = TreeNode(succ, actionWeights[action], self)
+
+
 
 
 
@@ -286,8 +314,8 @@ class MCTreeSearch(object):
         """
         :param iter: Number of iterations for each 'getAction' search
         :param selectonPolicy: Stochastic policy used for selecting nodes to expand, takes a 
-            state as an argument and returns a list of (action, weight) pairs
-        :param simulationPolicy: Stochastic policy used for simulating a game
+            state as an argument and returns a dict of (action -> weight) values
+        :param simulationPolicy: Stochastic policy used for simulating a game. (action -> weight) values again
         :param simulationDepth: depth to simulate to, default 0 means no max depth
         :param evalFn: evaluation function from states to some value, only used if simulationDepth > 0
         """
@@ -296,6 +324,7 @@ class MCTreeSearch(object):
         self.simPolicy = simulationPolicy
         self.simDepth = simulationDepth
         self.eval = evalFn
+
 
 	def getAction(self, gameState):
         """
@@ -311,21 +340,26 @@ class MCTreeSearch(object):
         to the cache tree at once, we then 'walk the tree' again, which will just select one of 
         the successors. This creates a need to identify nodes with 'numVisits' of 0 as having 
         not been added yet. This implementation detail is dealt with in 'getSuccInTree(action)'
+
+        Finally, after all the searching, we look at the action that leads to the best avg reward
+        from the rootNode (the node with state 'gameState'), and return that action to play.
         
         :param gameState: The current state of the game
         :return: The action leading to the best (avg) reward from the search
         """
-        rootNode = makeTree(gameState)
+        rootNode = TreeNode(gameState, 1)
+        agent = rootNode.state.agent
         for i in range(self.iter):
             leafNode = self.walkTree(rootNode) # selection
             self.expand(leafState) # expansion1
-            newLeafState = leafNode.step(policy) # expansion2: select one of the new children
-            value = self.simulate(newLeafState) # simulation
-            self.backPropogation(newLeafState, value) #back propocation
+            newLeafNode = self.step(leafNode) # expansion2: select one of the new children
+            value = self.simulate(newLeafNode, agent) # simulation
+            self.backPropogation(newLeafNode, value) # back propogation
 
         optAction = None
         optValue = -int('inf')
-        for (action, childNode) in rootNode.children:
+        for action in rootNode.children:
+            childNode = rootNode.children[action]
             if childNode.value > optValue:
                 optAction = action
                 optValue = childNode.value
@@ -333,7 +367,94 @@ class MCTreeSearch(object):
         return optAction
 
 
+    def walkTree(self, root):
+        """
+        Selection.
+        We stochastically walk the tree according to the distribution of weights stored in the 
+        tree. The original weights were computed using 'self.selPolicy', but we decay the weights 
+        in the tree over time. We walk the tree until we reach a leaf node, which we return
 
+        Leaf nodes are indicated by 'getSuccInTree' returning None
+
+        :param root: The base TreeNode that we will be starting the walk from
+        :return: A leaf node, rooted at 'root', arrived to by stochastically walking tree 
+        """
+        lastNode = root
+        node = root
+        while node != None:
+            actionToWeight = node.getActionToWeightMap()
+            action = util.selectRandomKey(actionToWeight)
+            lastNode = node
+            node = node.getSuccInTree(action)
+        return lastNode
+
+
+    def expand(self, node):
+        """
+        Expansion. (Part 1).
+        We expand the tree node 'node'. In this implementation we add all possible successors 
+        to the children map of 'node', with weights according to 'selPolicy'
+
+        :param node: The node to expand
+        """
+        node.expand(self.selPolicy)
+
+
+    def step(self, node):
+        """
+        Expansion. (Part 2).
+        Take one step from (just expanded) node 'node', randomly according to selection policy.
+
+        :param node: The node to take a step from
+        :return: The successor node
+        """
+        actionToWeight = node.getActionToWeightMap()
+        action = util.selectRandomKey(actionToWeight)
+        return node.getSuccAfterExpand(action)
+
+
+    def simulate(self, root, agent):
+        """
+        Simulate.
+        Simulates the rest of the game, stochastically, from node 'root', using policy 
+        'simPolicy'. Returns a value of the game. (1 if the agent wins, -1 if they don't, 
+        0 for a draw)
+
+        :param root: the node to simulate the game from
+        :param agent: the agent who we are trying to pick a good move for (back in the call to 
+            'getAction').
+        """
+        state = root.state
+        while state.winner() == -1:
+            actionToWeight = self.simPolicy(state)
+            action = util.selectRandomKey(actionToWeight)
+            state.updateBoard(action)
+
+        winner = state.winner()
+        if winner == agent:
+            return 1
+        elif winner == 1-agent:
+            return -1
+        elif winner == 2: # 2 indicates a draw 
+            return 0
+        else:
+            raise Exception("Something's weird with win conditions. In 'simulate', for MCTS")
+
+
+    def backPropogation(self, leafNode, value):
+        """
+        Backpropogation.
+        Having observed a game of value 'value' from leaf node, we wish to add this 
+        information to all nodes on the path from 'leafNode' to the root. Telling each of
+        the nodes in turn will cause them to update their running average 
+
+        :param leafNode: The leaf node the game was simulated from and we have an observed value
+        :param value: The value that we observed by stochastically simulating game
+        """
+        node = leafNode
+        while node != None:
+            node.witnessValue(value)
+            node = node.parent
 
 
 
