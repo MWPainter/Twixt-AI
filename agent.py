@@ -185,22 +185,23 @@ class PureMCAgent(object):
 		self.iter = int(iter)
 
 	def getAction(self, gameState):
-		actionCounts = defaultdict(int)
+		actionCounts = defaultdict(long)
 		legalActions = gameState.getLegalAction(gameState.agent)
 
 		for i in range(self.iter):
 			firstAction = random.sample(legalActions, 1)[0]
 			mc = gameState.generateSuccessor(gameState.agent, firstAction)
+			InitialNumLegalActions = len(mc.getLegalAction(mc.agent))
 			
 			if mc.winner() == gameState.agent:
 				actionCounts[firstAction] = actionCounts[firstAction]+1
 				continue
 
-			while mc.winner() == -1 and len(mc.getLegalAction(mc.agent)) > 0:
+			while mc.winner() == -1 and len(mc.getLegalAction(mc.agent)) > (InitialNumLegalActions - (mc.N + 1)):
 				action = random.sample(mc.getLegalAction(mc.agent), 1)[0]
 				mc.updateBoard(action)
 			if mc.winner() == gameState.agent:
-				actionCounts[firstAction] = actionCounts[firstAction]+1
+				actionCounts[firstAction] = actionCounts[firstAction] + 1
 
 		if len(actionCounts) == 0:
 			return firstAction

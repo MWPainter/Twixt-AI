@@ -2,11 +2,11 @@ from twixt import twixtBoard
 import agent
 from util import printc, bcolors
 
-n = 8
+n = 12
 iter = 1
-depth = 1
+depth = 2
 width = 4
-agent = [agent.MinimaxAgent(1), agent.PureMCAgent(20000)]
+agent = [agent.PureMCAgent(100000), agent.MinimaxAgent(depth)]
 
 def drawBoard(n, labels, assignments, bridges):
 	for i in range(n):

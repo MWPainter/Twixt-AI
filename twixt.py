@@ -302,48 +302,55 @@ class twixtBoard:
             self.runningScore += (1 - 2 * self.agent) * score
 
     def getBestEval(self, queryAgent):
-        grid = []
+        score = []
 
+        grid = []
         for i in range(self.N):
             for j in range(self.N):
                 if j == 0:
                     grid.append([])
                 grid[i].append(+float('inf'))
 
-        if queryAgent == 0:
+        for j in range(self.N):
+            grid[0][j] = 0
+        for i in range(1, self.N):
             for j in range(self.N):
-                grid[0][j] = 0
-            for i in range(1, self.N):
-                for j in range(self.N):
-                    if (i, j) in self.bridges:
-                        for pin, agent in self.bridges[(i, j)].iteritems():
-                            if agent == 0:
-                                grid[i][j] = min(grid[i][j], grid[i-1][j] + 1, grid[pin[0]][pin[1]])
-                            else:
-                                grid[i][j] = grid[i-1][j] + 1
-                    else:
-                        grid[i][j] = grid[i-1][j] + 1
+                if (i, j) in self.bridges:
+                    for pin, agent in self.bridges[(i, j)].iteritems():
+                        if agent == 0:
+                            grid[i][j] = min(grid[i][j], grid[i-1][j] + 1, grid[pin[0]][pin[1]])
+                        else:
+                            grid[i][j] = grid[i-1][j] + 1
+                else:
+                    grid[i][j] = grid[i-1][j] + 1
 
-            return self.N - min(grid[self.N - 1])
-        else:
-            for i in range(self.N):
-                grid[i][0] = 0
-            for j in range(1, self.N):
-                for i in range(self.N):
-                    if (i, j) in self.bridges:
-                        for pin, agent in self.bridges[(i, j)].iteritems():
-                            if agent == 1:
-                                grid[i][j] = min(grid[i][j], grid[i][j-1] + 1, grid[pin[0]][pin[1]])
-                            else:
-                                grid[i][j] = grid[i][j-1] + 1
-                    else:
-                        grid[i][j] = grid[i][j-1] + 1
+        score.append(min(grid[self.N - 1]))
+        
+        for i in range(self.N):
+            for j in range(self.N):
+                grid[i][j] = +float('inf')
 
-            result = float('inf')
+        for i in range(self.N):
+            grid[i][0] = 0
+        for j in range(1, self.N):
             for i in range(self.N):
-                if grid[i][self.N-1] < result:
-                    result = grid[i][self.N-1]
-            return self.N - result
+                if (i, j) in self.bridges:
+                    for pin, agent in self.bridges[(i, j)].iteritems():
+                        if agent == 1:
+                            grid[i][j] = min(grid[i][j], grid[i][j-1] + 1, grid[pin[0]][pin[1]])
+                        else:
+                            grid[i][j] = grid[i][j-1] + 1
+                else:
+                    grid[i][j] = grid[i][j-1] + 1
+
+        result = float('inf')
+        for i in range(self.N):
+            if grid[i][self.N-1] < result:
+                result = grid[i][self.N-1]
+        
+        score.append(result)
+
+        return score[1 - queryAgent] - score[queryAgent]
 
     # returns a better and more specialized score than getScore
     def getBetterScore(self): 
