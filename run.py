@@ -1,12 +1,36 @@
 from twixt import twixtBoard
+import sys
 import agent
 from util import printc, bcolors
 
-n = 12
-iter = 1
+if len(sys.argv) != 4:
+	print "Incorrect number of arguments. Please refer to the Readme file"
+	exit()
+
+n = int(sys.argv[3])
 depth = 2
 width = 4
-agent = [agent.MCTreeSearch(agent.twoPinAwayPolicy, agent.twoPinAwayPolicy, 1000), agent.HumanAgent(1)]
+agents = [None, None]
+
+if sys.argv[1] == "MCTreeSearch":
+	agents[0] = agent.MCTreeSearchAgent()
+elif sys.argv[1] == "HumanAgent":
+	agents[0] = agent.HumanAgent(0)
+elif sys.argv[1] == "PureMC":
+	agents[0] = agent.PureMCAgent()
+elif sys.argv[1] == "Minimax":
+	agents[0] = agent.MinimaxAgent()
+
+if sys.argv[2] == "MCTreeSearch":
+	agents[1] = agent.MCTreeSearchAgent()
+elif sys.argv[2] == "HumanAgent":
+	agents[1] = agent.HumanAgent(1)
+elif sys.argv[2] == "PureMC":
+	agents[1] = agent.PureMCAgent()
+elif sys.argv[2] == "Minimax":
+	agents[1] = agent.MinimaxAgent()
+
+#agent = [agent.MCTreeSearchAgent(agent.twoPinAwayPolicy, agent.twoPinAwayPolicy, 1000), agent.HumanAgent(1)]
 
 def drawBoard(n, labels, assignments, bridges):
 	for i in range(n):
@@ -32,13 +56,14 @@ def drawBoard(n, labels, assignments, bridges):
 			if j == n-1:
 				print "\n"
 
+iter = 1
 tb = twixtBoard(n)
 while tb.winner() == -1:
     print "iteration: ", iter
     iter += 1
 
 
-    action = agent[tb.agent].getAction(tb)
+    action = agents[tb.agent].getAction(tb)
     #print "agent, action: ", tb.agent, action
     tb.updateBoard(action)
     #print "pins: ", tb.pins
