@@ -317,9 +317,8 @@ class TreeNode(object):
         """
         if self.children != {}: return
         actionWeights = policy(self.state)
-        newAgent = 1 - self.state.agent
         for action in actionWeights:
-            succ = self.state.generateSuccessor(newAgent, action)
+            succ = self.state.generateSuccessor(self.state.agent, action)
             self.children[action] = TreeNode(succ, actionWeights[action], self)
 
         
@@ -374,6 +373,8 @@ class MCTreeSearch(object):
         Finally, after all the searching, we look at the action that leads to the best avg reward
         from the rootNode (the node with state 'gameState'), and return that action to play.
 
+        With some policies, it might not make the winning move, so we 'hack' that in also
+
         :param gameState: The current state of the game
         :return: The action leading to the best (avg) reward from the search
         """
@@ -388,13 +389,11 @@ class MCTreeSearch(object):
             value = self.simulate(newLeafNode, agent) # simulation
             self.backPropogation(newLeafNode, value) # back propogation
 
-        optAction = None
-        optValue = -float('inf')
         for action in rootNode.children:
-            childNode = rootNode.children[action]
-            if childNode.value > optValue:
-                optAction = action
-                optValue = childNode.value
+            if rootNode.children[action].state.winner() == agent:
+                return action
+
+        _, optAction = max([(rootNode.children[action].value, action) for action in rootNode.children])
 
         return optAction
 
@@ -436,6 +435,7 @@ class MCTreeSearch(object):
         Expansion. (Part 1).
         We expand the tree node 'node'. In this implementation we add all possible successors 
         to the children map of 'node', with weights according to 'selPolicy'
+        newAgent = 1 - self.state.agent
 
         :param node: The node to expand
         """
@@ -510,3 +510,44 @@ def uniformPolicy(state):
 def randomPolicy(state):
     actions = state.getLegalAction(state.agent)
     return {action: random.random() for action in actions}
+
+def onePinAwayPolicy(state):
+    actions = state.getLegalAction(state.agent)
+    actionMap = {}
+    for action in actions:
+        actionMap[action] = 0.0
+        if state.pins == {}:
+            actionMap[action] = 0.1
+        else:
+            for pin in state.pins:
+                if ((abs(pin[0] - action[0]) == 1 and abs(pin[1] - action[1]) == 2) or 
+                    (abs(pin[0] - action[0]) == 2 and abs(pin[1] - action[1]) == 1)):
+                    actionMap[action] = 100.0
+    
+    return actionMap
+
+def twoPinAwayPolicy(state):
+    actions = state.getLegalAction(state.agent)
+    actionMap = {}
+    for action in actions:
+        for pin in state.pins:
+             if state.pins[pin] != agent: continue
+             if ((abs(pin[0] - action[0]) == 1 and abs(pin[1] - action[1]) == 2) or 
+                 (abs(pin[0] - action[0]) == 2 and abs(pin[1] - action[1]) == 1) or
+                 (abs(pin[0] - action[0]) == 4) or
+                 (abs(pin[1] - action[1]) == 4) or
+                 (abs(pin[0] - action[0]) == 1 and abs(pin[1] - action[1]) == 3) or
+                 (abs(pin[0] - action[0]) == 3 and abs(pin[1] - action[1]) == 1) or
+                 (abs(pin[0] - action[0]) == 3 and abs(pin[1] - action[1]) == 3)):
+                 actionMap[action] = 100.0
+
+    if actionMap == {}:
+        for action in actions:
+            actionMap[action] = 1
+
+    #for action in actions:
+    #    if actionMap[action] != 0:
+    #        actionMap[action] = 1
+
+    return actionMap
+

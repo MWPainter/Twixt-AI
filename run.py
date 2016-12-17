@@ -2,11 +2,11 @@ from twixt import twixtBoard
 import agent
 from util import printc, bcolors
 
-n = 8
+n = 12
 iter = 1
 depth = 1
 width = 4
-agent = [agent.MCTreeSearch(agent.uniformPolicy, agent.uniformPolicy, 10000), agent.PureMCAgent(10000)]
+agent = [agent.MCTreeSearch(agent.twoPinAwayPolicy, agent.twoPinAwayPolicy, 1000), agent.HumanAgent(1)]
 
 def drawBoard(n, labels, assignments, bridges):
 	for i in range(n):
